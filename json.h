@@ -10,7 +10,7 @@ using namespace std;
 namespace gao
 {
 	enum class Type{JSON_OBJECT = 0, JSON_ARRAY, JSON_STRING, JSON_INTEGRAL, JSON_FLOAT, JSON_BOOL, JSON_NULL};
-	enum class JsonParseStatus{JSON_PARSE_OK = 0, JSON_PARSE_ERROR};
+	enum class JsonParseStatus{JSON_PARSE_ERROR = 0, JSON_PARSE_OK};
 	enum class JsonStringifyStatus { JSON_STRINGIFY_OK = 0, JSON_STRINGIFY_ERROR};
 
 	class JsonValue
@@ -60,13 +60,14 @@ namespace gao
 		template<class T>
 		void append(T t)
 		{
+			setType(JSONType::JSON_ARRAY);
 			data.arr->emplace_back(t);
 		}
 		
 		template<class T, Class... Args>
 		void append(T t, Args... args)
 		{
-			data.arr->emplace_back(t);
+			append(t);
 			append(args...);
 		}
 		
@@ -173,6 +174,11 @@ namespace gao
 		JsonValue getValue(int);
 		JsonValue getValue(string);
 		
+		string getString()
+		{
+			return *(data.s);
+		}
+		
 		Type JSONType() const
 		{
 			return type;
@@ -270,31 +276,72 @@ namespace gao
 		switch(str[offset])
 		{
 			case '[':
-				return parse_array(str,offset);
+				return parse_array(res, str,offset);
 			case '{':
-				return parse_object(str, offset);
+				return parse_object(res, str, offset);
 			case '\"':
-				return parse_string(str, offset);
+				return parse_string(res, str, offset);
 			case 't':
 			case 'f':
-				return parse_bool(str, offset);
+				return parse_bool(res, str, offset);
 			case 'n':
-				return parse_null(str, offset);
+				return parse_null(res, str, offset);
+			case '-':
+			case '0':
+			case '1'
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				return parse_number(res, str, offset);
 			default:
-				return parse_number(str, offset);
+				return JsonParseStatus::JSON_PARSE_ERROR;
 		}
 	}
 	
 	JsonParseStatus parse_object(JsonValue& res, const string& str, size_t& offset)
 	{
-		++offset;
-		pass_whitespace(str, offset);
+		char c = str[offset];
+		while(c != '}')
+		{
+			++offset;
+			pass_whitespace(str, offset);
+			string key = "";
+			JsonValue valueKey = JsonValue();
+			if(parse_string(valueKey, str, offset) == JsonParseStatus::JSON_PARSE_OK)
+				key = valueKey.getString();
+			else
+				return JsonParseStatus::JSON_PARSE_ERROR;
+			//TODO::解析value
+		}
 	}
 	
 	JsonParseStatus parse_array(JsonValue& res, const string& str, size_t& offset)
 	{
+		c = str[offset];
+		while(c != ']')
+		{
+			++offset;
+			pass_whitespace(str, offset);
+			JsonValue temp = JsonValue();
+			if(parse(temp, str, offset) == JsonParseStatus::JSON_PARSE_OK)
+				res.append(temp);
+			else
+				return JsonParseStatus::JSON_PARSE_ERROR;
+			c = str[offset];
+			if(c != ',' && c != ']')
+				return JsonParseStatus::JSON_PARSE_ERROR;
+		}
 		++offset;
 		pass_whitespace(str, offset);
+		c = str[offset];
+		if(c != '\0' && c != ',' && c != ']' && c != '}')
+			return JsonParseStatus::JSON_PARSE_ERROR;
+		return JsonParseStatus::JSON_PARSE_OK;
 	}
 	
 	JsonParseStatus parse_number(JsonValue& res, const string& str, size_t& offset)
@@ -348,7 +395,7 @@ namespace gao
 			}
 			else
 			{
-				long long ll = stol(val);
+				long long ll = stoll(val);
 				res = JsonValue(ll);
 			}
 		}
@@ -378,7 +425,7 @@ namespace gao
 		char c = str[offset];
 		if(c != '\0' && c != ',' && c != ']' && c != '}')
 			return JsonParseStatus::JSON_PARSE_ERROR;
-		res = JsonValue();
+		res = JsonValue(true);
 		return JsonParseStatus::JSON_PARSE_OK;
 	}
 	
@@ -392,7 +439,7 @@ namespace gao
 		char c = str[offset];
 		if(c != '\0' && c != ',' && c != ']' && c != '}')
 			return JsonParseStatus::JSON_PARSE_ERROR;
-		res = JsonValue();
+		res = JsonValue(false);
 		return JsonParseStatus::JSON_PARSE_OK;
 	}
 	
@@ -413,10 +460,9 @@ namespace gao
 	JsonParseStatus parse_string(JsonValue& res, const string& str, size_t offset)
 	{
 		string val = "";
-		char c;
-		do
+		char c = str[++offset];
+		while(c != '\"')
 		{
-			c = str[++offset];
 			if(c == '\\')
 			{
 				switch(str[++offset])
@@ -430,8 +476,31 @@ namespace gao
 					case 'r' : val += '\r'; break;
 					case 't' : val += '\t'; break;
 					case 'u' :
+						{
+							val += "\\u";
+							for(int i = 0; i < 4; i++)
+							{
+								if(isdigit(str[offset+i]) || (str[offset+i] >= 'a' && str[offset+i] <= 'f') || (str[offset+i] >= 'A' && str[offset+i] <= 'F'))
+									val += str[offset+i];
+								else
+									return JsonParseStatus::JSON_PARSE_ERROR;
+							}
+							offset += 4;
+						}
+						break;
+					default : return JsonParseStatus::JSON_PARSE_ERROR;
 				}
 			}
-		}while(c != '\"');
+			else
+				val += c;
+			c = str[++offset];
+		}
+		++offset;
+		pass_whitespace(str, offset);
+		c = str[offset];
+		if(c != '\0' && c != ',' && c != ']' && c != '}')
+			return JsonParseStatus::JSON_PARSE_ERROR;
+		res = val;
+		return JsonParseStatus::JSON_PARSE_OK;
 	}
 }
