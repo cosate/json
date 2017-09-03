@@ -288,7 +288,7 @@ namespace gao
 				return parse_null(res, str, offset);
 			case '-':
 			case '0':
-			case '1'
+			case '1':
 			case '2':
 			case '3':
 			case '4':
