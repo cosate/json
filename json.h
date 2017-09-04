@@ -5,6 +5,8 @@
 #include<string>
 #include<initializer_list>
 #include<type_traits>
+#include<cmath>
+#include<algorithm>
 using namespace std;
 
 namespace gao
@@ -54,7 +56,7 @@ namespace gao
 		JsonValue(T t, Args... args) : type(Type::JSON_ARRAY)
 		{
 			data.arr = new vector<JsonValue>();
-			arr->emplace_back(t);
+			data.arr->emplace_back(t);
 			append(args...);
 		}
 
