@@ -6,7 +6,6 @@
 #include<initializer_list>
 #include<type_traits>
 #include<cmath>
-#include<algorithm>
 using namespace std;
 
 namespace gao
@@ -48,9 +47,15 @@ namespace gao
 		template<class T>
 		JsonValue(T d, typename enable_if<is_floating_point<T>::value>::type* = nullptr) : data((double)d), type(Type::JSON_FLOAT) {}
 
-		//注意这里的构造函数参数的传递，关于常量值的内存问题
 		template<class T>
 		JsonValue(T s, typename enable_if<is_convertible<T, string>::value>::type* = nullptr) : data(string(s)), type(Type::JSON_STRING) {}
+
+		JsonValue(nullptr_t) : data(), type(Type::JSON_NULL) {}
+
+		JsonValue(const vector<JsonValue>& vec){}
+
+		JsonValue(const JsonValue* ptr) {}
+
 
 		template<class T, class... Args>
 		JsonValue(T t, Args... args) : type(Type::JSON_ARRAY)
@@ -179,7 +184,7 @@ namespace gao
 			return ((this->data).arr)->operator[](index);
 		}
 		template<class T>
-		bool operator ==(T t) {}
+		bool operator==(T t) {}
 
 
 		JsonValue& remove(JsonValue);
@@ -190,7 +195,8 @@ namespace gao
 		JsonValue getValue(int);
 		JsonValue getValue(string);
 
-		string getString()
+
+		string getString() const
 		{
 			return *(data.s);
 		}
@@ -466,10 +472,17 @@ namespace gao
 					return JsonParseStatus::JSON_PARSE_ERROR;
 				if (str[offset] != ',' && str[offset] != '}')
 					return JsonParseStatus::JSON_PARSE_ERROR;
+				c = str[offset];
 			}
 			else
 				return JsonParseStatus::JSON_PARSE_ERROR;
 		}
+		++offset;
+		pass_whitespace(str, offset);
+		c = str[offset];
+		if (c != '\0' && c != ',' && c != ']' && c != '}')
+			return JsonParseStatus::JSON_PARSE_ERROR;
+		return JsonParseStatus::JSON_PARSE_OK;
 	}
 
 	JsonParseStatus parse_array(JsonValue& res, const string& str, size_t& offset)
@@ -539,7 +552,10 @@ namespace gao
 			if (str[offset] == '\0')
 				cout << "Load succeeded" << endl;
 			else
+			{
+				res = JsonValue();
 				cerr << "Load failed" << endl;
+			}
 		}
 		else
 		{
