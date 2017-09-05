@@ -145,6 +145,44 @@ namespace gao
 			other.data.i = 0;
 			return *this;
 		}
+		
+		template<class T>
+		typename enable_if<is_same<T, bool>::value, JsonValue&>::type operator=(T boo)
+		{
+			setType(Type::JSON_BOOL);
+			data.b = boo;
+			return *this;
+		}
+		
+		template<class T>
+		typename enable_if<is_integral<T>::value, JsonValue&>::type operator=(T i)
+		{
+			setType(Type::JSON_INTEGRAL);
+			data.i = (long long)i;
+			return *this;
+		}
+		
+		template<class T>
+		typename enable_if<is_floating_point<T>::value, JsonValue&>::type operator=(T d)
+		{
+			setType(Type::JSON_FLOAT);
+			data.d = (double)d;
+			return *this;
+		}
+		
+		template<class T>
+		typename enable_if<is_convertible<T, string>::value, JsonValue&>::type operator=(T s)
+		{
+			setType(Type::JSON_STRING);
+			data.s = new string(s);
+			return *this;
+		}
+		
+		JsonValue& operator=(nullptr)
+		{
+			setType(Type::JSON_NULL);
+			return *this;
+		}
 
 		static JsonValue make(Type t)
 		{
@@ -183,22 +221,39 @@ namespace gao
 			setType(Type::JSON_ARRAY);
 			return ((this->data).arr)->operator[](index);
 		}
-		template<class T>
-		bool operator==(T t) {}
-
+		
+		bool operator==(const JsonValue& other)
+		{
+			if(type != other.type)
+				return false;
+			else
+			{
+				switch(type)
+				{
+				case Type::JSON_NULL:
+					return true;
+				case Type::JSON_BOOL:
+					return data.b == other.data.b;
+				case Type::JSON_INTEGRAL:
+					return data.i == other.data.i;
+				case Type::JSON_FLOAT:
+					return data.d == other.data.d;
+				case Type::JSON_STRING:
+					return *(data.s) == *(data.s);
+				case Type::JSON_ARRAY:
+					
+				}
+			}
+		}
 
 		JsonValue& remove(JsonValue);
-		JsonValue& setValue(int);
-		JsonValue& setValue(string);
-		Type getType();
-
-		JsonValue getValue(int);
-		JsonValue getValue(string);
-
-
+		
 		string getString() const
 		{
-			return *(data.s);
+			if(type == Type::JSON_STRING)
+				return *(data.s);
+			else
+				return "";
 		}
 
 		Type JSONType() const
@@ -263,9 +318,9 @@ namespace gao
 		}
 	};
 
-	void dumps(const JsonValue& json, string& res)
+	string dumps(const JsonValue& json)
 	{
-
+		
 	}
 
 	inline bool iswhitespace(char c)
