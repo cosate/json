@@ -52,7 +52,10 @@ namespace gao
 
 		JsonValue(nullptr_t) : data(), type(Type::JSON_NULL) {}
 
-		JsonValue(const vector<JsonValue>& vec){}
+		template<class T>
+		JsonValue(T* t) = delete;
+
+		JsonValue(const vector<JsonValue>& vec) {}
 
 		JsonValue(const JsonValue* ptr) {}
 
@@ -97,17 +100,17 @@ namespace gao
 			type = other.type;
 			switch (type)
 			{
-			case Type::JSON_ARRAY:
-				data.arr = new vector<JsonValue>(other.data.arr->begin(), other.data.arr->end());
-				break;
-			case Type::JSON_OBJECT:
-				data.dict = new map<string, JsonValue>(other.data.dict->begin(), other.data.dict->end());
-				break;
-			case Type::JSON_STRING:
-				data.s = new string(*(other.data.s));
-				break;
-			default:
-				data = other.data;
+				case Type::JSON_ARRAY:
+					data.arr = new vector<JsonValue>(other.data.arr->begin(), other.data.arr->end());
+					break;
+				case Type::JSON_OBJECT:
+					data.dict = new map<string, JsonValue>(other.data.dict->begin(), other.data.dict->end());
+					break;
+				case Type::JSON_STRING:
+					data.s = new string(*(other.data.s));
+					break;
+				default:
+					data = other.data;
 			}
 		}
 
@@ -122,17 +125,17 @@ namespace gao
 			setType(other.type);
 			switch (other.type)
 			{
-			case Type::JSON_ARRAY:
-				data.arr = new vector<JsonValue>(other.data.arr->begin(), other.data.arr->end());
-				break;
-			case Type::JSON_OBJECT:
-				data.dict = new map<string, JsonValue>(other.data.dict->begin(), other.data.dict->end());
-				break;
-			case Type::JSON_STRING:
-				data.s = new string(*(other.data.s));
-				break;
-			default:
-				data = other.data;
+				case Type::JSON_ARRAY:
+					data.arr = new vector<JsonValue>(other.data.arr->begin(), other.data.arr->end());
+					break;
+				case Type::JSON_OBJECT:
+					data.dict = new map<string, JsonValue>(other.data.dict->begin(), other.data.dict->end());
+					break;
+				case Type::JSON_STRING:
+					data.s = new string(*(other.data.s));
+					break;
+				default:
+					data = other.data;
 			}
 			return *this;
 		}
@@ -145,7 +148,7 @@ namespace gao
 			other.data.i = 0;
 			return *this;
 		}
-		
+
 		template<class T>
 		typename enable_if<is_same<T, bool>::value, JsonValue&>::type operator=(T boo)
 		{
@@ -153,7 +156,7 @@ namespace gao
 			data.b = boo;
 			return *this;
 		}
-		
+
 		template<class T>
 		typename enable_if<is_integral<T>::value, JsonValue&>::type operator=(T i)
 		{
@@ -161,7 +164,7 @@ namespace gao
 			data.i = (long long)i;
 			return *this;
 		}
-		
+
 		template<class T>
 		typename enable_if<is_floating_point<T>::value, JsonValue&>::type operator=(T d)
 		{
@@ -169,7 +172,7 @@ namespace gao
 			data.d = (double)d;
 			return *this;
 		}
-		
+
 		template<class T>
 		typename enable_if<is_convertible<T, string>::value, JsonValue&>::type operator=(T s)
 		{
@@ -177,8 +180,8 @@ namespace gao
 			data.s = new string(s);
 			return *this;
 		}
-		
-		JsonValue& operator=(nullptr)
+
+		JsonValue& operator=(nullptr_t)
 		{
 			setType(Type::JSON_NULL);
 			return *this;
@@ -196,17 +199,17 @@ namespace gao
 		{
 			switch (type)
 			{
-			case Type::JSON_ARRAY:
-				delete data.arr;
-				break;
-			case Type::JSON_OBJECT:
-				delete data.dict;
-				break;
-			case Type::JSON_STRING:
-				delete data.s;
-				break;
-			default:
-				;
+				case Type::JSON_ARRAY:
+					delete data.arr;
+					break;
+				case Type::JSON_OBJECT:
+					delete data.dict;
+					break;
+				case Type::JSON_STRING:
+					delete data.s;
+					break;
+				default:
+					;
 			}
 		}
 
@@ -221,37 +224,70 @@ namespace gao
 			setType(Type::JSON_ARRAY);
 			return ((this->data).arr)->operator[](index);
 		}
+
+		bool operator!=(const JsonValue& other)
+		{
+			return !(*this == other);
+		}
 		
 		bool operator==(const JsonValue& other)
 		{
-			if(type != other.type)
+			if (type != other.type)
 				return false;
 			else
 			{
-				switch(type)
+				switch (type)
 				{
-				case Type::JSON_NULL:
-					return true;
-				case Type::JSON_BOOL:
-					return data.b == other.data.b;
-				case Type::JSON_INTEGRAL:
-					return data.i == other.data.i;
-				case Type::JSON_FLOAT:
-					return data.d == other.data.d;
-				case Type::JSON_STRING:
-					return *(data.s) == *(data.s);
-				case Type::JSON_ARRAY:
-					
+					case Type::JSON_NULL:
+						return true;
+					case Type::JSON_BOOL:
+						return data.b == other.data.b;
+					case Type::JSON_INTEGRAL:
+						return data.i == other.data.i;
+					case Type::JSON_FLOAT:
+						return data.d == other.data.d;
+					case Type::JSON_STRING:
+						return *(data.s) == *(other.data.s);
+					case Type::JSON_ARRAY:
+					{
+						if (data.arr->size() != other.data.arr->size())
+							return false;
+						else
+						{
+							auto i = data.arr->begin();
+							auto j = other.data.arr->begin();
+							for (; i != data.arr->end(), j != other.data.arr->end(); i++, j++)
+							{
+								if (*i != *j)
+									return false;
+							}
+							return true;
+						}
+					}
+					case Type::JSON_OBJECT:
+					{
+						if (data.arr->size() != other.data.arr->size())
+							return false;
+						else
+						{
+							auto i = data.arr->begin();
+							auto j = other.data.arr->begin();
+							for (; i != data.arr->end(), j != other.data.arr->end(); i++, j++)
+							{
+								if (*i != *j)
+									return false;
+							}
+							return true;
+						}
+					}
 				}
 			}
 		}
 
-		JsonValue& remove(JsonValue);
-		
 		string getString() const
 		{
-			if(type == Type::JSON_STRING)
-				return *(data.s);
+			if (type == Type::JSON_STRING)
+				return*(data.s);
 			else
 				return "";
 		}
@@ -261,8 +297,10 @@ namespace gao
 			return type;
 		}
 
-		void encode();
-		void decode();
+		string dumps()
+		{
+			return dump(0);
+		}
 	private:
 		void setType(Type t)
 		{
@@ -273,29 +311,29 @@ namespace gao
 			type = t;
 			switch (t)
 			{
-			case Type::JSON_ARRAY:
-				data.arr = new vector<JsonValue>();
-				break;
-			case Type::JSON_OBJECT:
-				data.dict = new map<string, JsonValue>();
-				break;
-			case Type::JSON_STRING:
-				data.s = new string();
-				break;
-			case Type::JSON_NULL:
-				data.i = 0;
-				break;
-			case Type::JSON_INTEGRAL:
-				data.i = 0;
-				break;
-			case Type::JSON_FLOAT:
-				data.d = 0.0;
-				break;
-			case Type::JSON_BOOL:
-				data.b = false;
-				break;
-			default:
-				;
+				case Type::JSON_ARRAY:
+					data.arr = new vector<JsonValue>();
+					break;
+				case Type::JSON_OBJECT:
+					data.dict = new map<string, JsonValue>();
+					break;
+				case Type::JSON_STRING:
+					data.s = new string();
+					break;
+				case Type::JSON_NULL:
+					data.i = 0;
+					break;
+				case Type::JSON_INTEGRAL:
+					data.i = 0;
+					break;
+				case Type::JSON_FLOAT:
+					data.d = 0.0;
+					break;
+				case Type::JSON_BOOL:
+					data.b = false;
+					break;
+				default:
+					;
 			}
 		}
 
@@ -303,26 +341,165 @@ namespace gao
 		{
 			switch (type)
 			{
-			case Type::JSON_ARRAY:
-				delete data.arr;
-				break;
-			case Type::JSON_OBJECT:
-				delete data.dict;
-				break;
-			case Type::JSON_STRING:
-				delete data.s;
-				break;
-			default:
-				;
+				case Type::JSON_ARRAY:
+					delete data.arr;
+					break;
+				case Type::JSON_OBJECT:
+					delete data.dict;
+					break;
+				case Type::JSON_STRING:
+					delete data.s;
+					break;
+				default:
+					;
 			}
+		}
+
+		string dump(int level)
+		{
+			switch (type)
+			{
+				case Type::JSON_NULL:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					return res + "null";
+				}
+				case Type::JSON_BOOL:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					return data.b ? res + "true" : res + "false";
+				}
+				case Type::JSON_INTEGRAL:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					return res + to_string(data.i);
+				}
+				case Type::JSON_FLOAT:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					return res + to_string(data.d);
+				}
+				case Type::JSON_STRING:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					return res + "\"" + escape(*(data.s)) + "\"";
+				}
+				case Type::JSON_ARRAY:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					res += "[\n";
+					for (auto it = data.arr->begin(); it != data.arr->end(); it++)
+					{
+						res += (*it).dump(level + 1);
+						res += ",\n";
+					}
+					res.pop_back();
+					res.pop_back();
+					res += "\n";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					res += ']';
+					return res;
+				}
+				case Type::JSON_OBJECT:
+				{
+					string res = "";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					res += "{\n";
+					for (auto it = data.dict->begin(); it != data.dict->end(); it++)
+					{
+						for (int i = 0; i < level + 1; i++)
+							res += "	";
+						res += "\"";
+						res += escape((*it).first);
+						res += "\"";
+						res += " : \n";
+						res += (*it).second.dump(level + 1);
+						res += ",\n\n";
+					}
+					res.pop_back();
+					res.pop_back();
+					res.pop_back();
+					res += "\n";
+					for (int i = 0; i < level; i++)
+						res += "	";
+					res += '}';
+					return res;
+				}
+				default:
+					return "";
+			}
+		}
+
+		string escape(const string& str)
+		{
+			string res = "";
+			size_t index = 0;
+			while (str[index] != '\0')
+			{
+				switch (str[index])
+				{
+					case '\"': res += "\\\""; break;
+					case '\\': res += "\\\\"; break;
+					case '\b': res += "\\b";  break;
+					case '\f': res += "\\f";  break;
+					case '\n': res += "\\n";  break;
+					case '\r': res += "\\r";  break;
+					case '\t': res += "\\t";  break;
+					default: res += str[index]; break;
+				}
+				++index;
+			}
+			return res;
 		}
 	};
 
-	string dumps(const JsonValue& json)
+	ostream& operator<<(ostream& out, JsonValue& json)
 	{
-		
+		out << "Json Type : ";
+		switch (json.JSONType())
+		{
+		case Type::JSON_ARRAY:
+			out << "array\n";
+			break;
+		case Type::JSON_BOOL:
+			out << "bool\n";
+			break;
+		case Type::JSON_FLOAT:
+			out << "float\n";
+			break;
+		case Type::JSON_INTEGRAL:
+			out << "integral\n";
+			break;
+		case Type::JSON_NULL:
+			out << "null\n";
+			break;
+		case Type::JSON_STRING:
+			out << "string\n";
+			break;
+		case Type::JSON_OBJECT:
+			out << "object\n";
+			break;
+		default:
+			;
+		}
+		out << json.dumps() << endl;
+		return out;
 	}
-
+	
 	inline bool iswhitespace(char c)
 	{
 		return (c == ' ' || c == '\n' || c == '\r' || c == '\t');
@@ -462,28 +639,28 @@ namespace gao
 			{
 				switch (str[++offset])
 				{
-				case '\"': val += '\"'; break;
-				case '\\': val += '\\'; break;
-				case '/': val += '/'; break;
-				case 'b': val += '\b'; break;
-				case 'f': val += '\f'; break;
-				case 'n': val += '\n'; break;
-				case 'r': val += '\r'; break;
-				case 't': val += '\t'; break;
-				case 'u':
-				{
-					val += "\\u";
-					for (int i = 0; i < 4; i++)
+					case '\"': val += '\"'; break;
+					case '\\': val += '\\'; break;
+					case '/': val += '/'; break;
+					case 'b': val += '\b'; break;
+					case 'f': val += '\f'; break;
+					case 'n': val += '\n'; break;
+					case 'r': val += '\r'; break;
+					case 't': val += '\t'; break;
+					case 'u':
 					{
-						if (isdigit(str[offset + i]) || (str[offset + i] >= 'a' && str[offset + i] <= 'f') || (str[offset + i] >= 'A' && str[offset + i] <= 'F'))
-							val += str[offset + i];
-						else
-							return JsonParseStatus::JSON_PARSE_ERROR;
+						val += "\\u";
+						for (int i = 1; i < 5; i++)
+						{
+							if (isdigit(str[offset + i]) || (str[offset + i] >= 'a' && str[offset + i] <= 'f') || (str[offset + i] >= 'A' && str[offset + i] <= 'F'))
+								val += str[offset + i];
+							else
+								return JsonParseStatus::JSON_PARSE_ERROR;
+						}
+						offset += 4;
 					}
-					offset += 4;
-				}
-				break;
-				default: return JsonParseStatus::JSON_PARSE_ERROR;
+					break;
+					default: return JsonParseStatus::JSON_PARSE_ERROR;
 				}
 			}
 			else
@@ -570,31 +747,31 @@ namespace gao
 		pass_whitespace(str, offset);
 		switch (str[offset])
 		{
-		case '[':
-			return parse_array(res, str, offset);
-		case '{':
-			return parse_object(res, str, offset);
-		case '\"':
-			return parse_string(res, str, offset);
-		case 't':
-		case 'f':
-			return parse_bool(res, str, offset);
-		case 'n':
-			return parse_null(res, str, offset);
-		case '-':
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			return parse_number(res, str, offset);
-		default:
-			return JsonParseStatus::JSON_PARSE_ERROR;
+			case '[':
+				return parse_array(res, str, offset);
+			case '{':
+				return parse_object(res, str, offset);
+			case '\"':
+				return parse_string(res, str, offset);
+			case 't':
+			case 'f':
+				return parse_bool(res, str, offset);
+			case 'n':
+				return parse_null(res, str, offset);
+			case '-':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				return parse_number(res, str, offset);
+			default:
+				return JsonParseStatus::JSON_PARSE_ERROR;
 		}
 	}
 
