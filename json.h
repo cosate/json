@@ -301,6 +301,19 @@ namespace gao
 		{
 			return dump(0);
 		}
+		
+		int getSize()
+		{
+			if (type == Type::JSON_ARRAY)
+				return data.arr->size();
+			else if (type == Type::JSON_OBJECT)
+				return data.dict->size();
+			else
+			{
+				cerr << "not a container" << endl;
+				return -1;
+			}
+		}
 	private:
 		void setType(Type t)
 		{
@@ -686,6 +699,11 @@ namespace gao
 		{
 			++offset;
 			pass_whitespace(str, offset);
+			if (res.getSize() == 0)
+			{
+				if (str[offset] == '}')
+					break;
+			}
 			string key = "";
 			JsonValue valueKey = JsonValue();
 			if (parse_string(valueKey, str, offset) == JsonParseStatus::JSON_PARSE_OK)
@@ -725,6 +743,11 @@ namespace gao
 		{
 			++offset;
 			pass_whitespace(str, offset);
+			if (res.getSize() == 0)
+			{
+				if (str[offset] == ']')
+					break;
+			}
 			JsonValue temp = JsonValue();
 			if (parse(temp, str, offset) == JsonParseStatus::JSON_PARSE_OK)
 				res.append(temp);

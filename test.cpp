@@ -1,5 +1,6 @@
 #include<iostream>
 #include<string>
+#include<fstream>
 #include"json.h"
 using namespace std;
 using namespace gao;
@@ -44,6 +45,22 @@ int main()
 
 	if (j9 == j8)
 		cout << "yeah" << endl;
+	
+	cout << "---------------------测试案例---------------------" << endl;
+
+	ifstream file;
+	file.open("./sample-jsons-windows/fathers.json");
+	string res;
+	string temp;
+	while (getline(file, temp))
+	{
+		res.append(temp);
+		temp = "";
+	}
+	file.close();
+	JsonValue j10;
+	loads(j10, res);
+	cout << j10 << endl;
 	
 	return 0;
 }
