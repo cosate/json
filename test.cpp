@@ -49,7 +49,7 @@ int main()
 	cout << "---------------------测试案例---------------------" << endl;
 
 	ifstream file;
-	file.open("./sample-jsons-windows/fathers.json");
+	file.open("./sample-jsons/fathers.json");
 	string res;
 	string temp;
 	while (getline(file, temp))
