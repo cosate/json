@@ -1,11 +1,11 @@
-#JSON
+# JSON
 
 看[Milo Yip](http://github.com/miloyip/json-tutorial)大神的教程，理解了递归下降语法，之后用C++写了个JSON解析器和生成器，符合JSON标准。
 
 ***
-##DOCUMENT
+## DOCUMENT
 
-###数据类型和常量
+### 数据类型和常量
 
 JSON数据类型：`JSON_OBJECT, JSON_ARRAY, JSON_STRING, JSON_INTEGRAL, JSON_FLOAT, JSON_BOOL, JSON_NULL`
 
@@ -13,7 +13,7 @@ JSON数据类型：`JSON_OBJECT, JSON_ARRAY, JSON_STRING, JSON_INTEGRAL, JSON_FL
 
 生成常量：`JSON_STRINGIFY_OK, JSON_STRINGIFY_ERROR`
 
-###类
+### 类
 
 * 类成员
 
@@ -69,14 +69,14 @@ JSON数据类型：`JSON_OBJECT, JSON_ARRAY, JSON_STRING, JSON_INTEGRAL, JSON_FL
 
 		在构造JSON对象过程中，或是操作JSON对象时，添加新的键值对或者JSON对象。
 
-###全局函数（部分）
+### 全局函数（部分）
 
 `void loads(JsonValue& res, const string& str)`
 
 从字符串str中解析JSON，存入res。该函数是提供给全局的解析函数。
 
 
-##DEMO
+## DEMO
 
 	ifstream file;
 	file.open("./sample-jsons/fathers.json");`
